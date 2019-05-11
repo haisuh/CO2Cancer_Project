@@ -1,0 +1,38 @@
+---
+output:
+  pdf_document:
+    citation_package: natbib
+    fig_caption: yes
+    template: ./resources/aog-latex-ms.tex
+  word_document:
+    reference_docx: ./resources/aog_word_style.docx
+fontfamily: mathpazo
+fontsize: 11pt
+anonymous: false
+endnotes: false
+pagenumber: 1
+bibliography: ../project.bib
+biblio-style: ./resources/ajs.bst
+title: "The Title"
+author:
+- affiliation: University of Oregon, Sociology
+  name: Haisu Huang
+- affiliation: Some Research University
+  name: My co-author
+keywords: keywords
+thanks: Thanks to people and stuff
+abstract: This is a test abstract
+---
+
+# Introduction
+
+Previous studies have examined the relationship between exposure to air pollution and its impact on health. A few studies on population scale influenced by air pollution have focused on consequences such as lower birth weight and higher death rate. But little research exists that explores the direct association between air pollution and mortality. Understanding such association is important to predict the trend of the Earth’s population and to estimate the significance of climate change upon humans. This research project aims to: 1) find out how air pollution impacts the rate of human mortality; and,  2) predict the rate of impact upon the population scale following an increase of air pollution. 
+
+
+# Data and Methods
+
+# Results
+
+# Conclusions
+
+# References

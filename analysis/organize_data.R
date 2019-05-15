@@ -11,12 +11,13 @@ source("useful_functions.R")
 library(readr)
 
 # creating dataset in R
-wdidata <- read_csv("analysis/input/WDI_Data.csv", 
+wdidata <- read_csv("analysis/input/wdidata.csv", 
                     col_names = c("counname", "councode", "time", "timecode",
-                                  "pm2.5", "mortrate", "mortdisease","lifexpec","co2emmission"),
+                                  "pm2.5", "mortrate","lifexpec","co2emmission", 
+                                  "gdpcap", "gdpcapgro", "urbanpop", "mortdisease"),
                     skip = 1)
-wdidef <- read_csv2("analysis/input/WDI_Definition and Source.csv")
+
 
 # saving dataset to output folder
-write_csv(wdidata, "analysis/input/WDI_Data.csv")
-write_csv(wdidef, "analysis/input/WDI_Definition and Source.csv")
+write_csv(wdidata, "analysis/input/wdidata.csv")
+

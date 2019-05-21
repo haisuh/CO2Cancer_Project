@@ -11,13 +11,15 @@ source("useful_functions.R")
 library(readr)
 
 # creating dataset in R
-wdidata <- read_csv("analysis/input/wdidata.csv", 
+wdidata <- read_csv("input/wdidata.csv", 
                     col_names = c("counname", "councode", "time", "timecode",
                                   "pm2.5", "mortrate","lifexpec","co2emmission", 
                                   "gdpcap", "gdpcapgro", "urbanpop", "mortdisease"),
-                    skip = 1)
+                    skip = 1,
+                    na=c("","..","NA"))
 
+junk_stuff <- unique(wdidata$counname)[218:267]
 
-# saving dataset to output folder
-write_csv(wdidata, "analysis/input/wdidata.csv")
+wdidata <- subset(wdidata, !(wdidata$counname %in% junk_stuff))
+
 

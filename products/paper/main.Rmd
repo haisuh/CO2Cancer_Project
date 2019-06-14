@@ -27,8 +27,7 @@ abstract: This is a test abstract
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message= FALSE)
-source("useful_functions.R")
-load("analysis/output/analytical_data.RData")
+load("../../analysis/output/analytical_data.RData")
 library(mice)
 library(sandwich)
 library(lmtest)
@@ -74,20 +73,24 @@ In the process of analysis, I exmained the relationship of each variable with li
 <a href="#top">Back to top</a>
 
 
-```{r figure-1, echo=FALSE}
+```{r fig.cap="Figure 1", echo=FALSE}
 
 ggplot(wdidata, aes(x=co2emmission, y=lifexpec))+
          geom_point()+
          geom_smooth(se=FALSE)+
          geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
          theme_bw()
+```
 
+```{r fig.cap="Figure 2", echo=FALSE}
 ggplot(wdidata, aes(x=gdpcap, y=lifexpec))+
          geom_point()+
          geom_smooth(se=FALSE)+
          geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
          theme_bw()
+```
 
+```{r fig.cap="Figure 3", echo=FALSE}
 ggplot(wdidata, aes(x=pm2.5, y=lifexpec))+
          geom_point()+
          geom_smooth(se=FALSE)+
@@ -99,13 +102,15 @@ ggplot(wdidata, aes(x=pm2.5, y=lifexpec))+
 Since both CO2 emission and PM2.5 indicates the quality of air, I sythesized these two variable and examined the relationship between this sythetic scale with life expectancy. 
 
 
-```{r figure-2, echo=FALSE}
+```{r fig.cap="Figure 4", echo=FALSE}
 ggplot(wdidata, aes(x=gdpcap, y=co2emmission))+
   geom_point()+
   geom_smooth(se=FALSE)+
   geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
   theme_bw()
+```
 
+```{r fig.cap="Figure 5", echo=FALSE}
 wdidata$bad_air <- scale(scale(wdidata$pm2.5)+scale(wdidata$co2emmission))
 
 ggplot(wdidata, aes(x=bad_air, y=lifexpec))+
@@ -118,7 +123,7 @@ ggplot(wdidata, aes(x=bad_air, y=lifexpec))+
 I also respectively synthetized (1) PM2.5 and GDP per capita (2) CO2 emission and GDP per capita (3) PM2.5, CO2 emission and GDP per capita. All three charts indicate similar trends of life expectancy with changes of the independant variables. One thing notable is the outlier with large independant variable index and also high life expetancy. The country is Qatar, a wealthy middle eastern country. According to the data of Qatar, air quality does not cause life expenctany noticeably low, rather people in this country tends to live longer, despite of the poor air quality. This seems to contradicts with common sense that poor air quality should lower life expectancy, however, tt is suspected that GDP per capita may play a part in this contradictive phenomenon.
 
 
-```{r figure-3, echo=FALSE}
+```{r fig.cap="Figure 6", echo=FALSE}
 wdidata$pm2.5_gdpcap <- scale(scale(wdidata$pm2.5)+scale(wdidata$gdpcap))
 
 ggplot(wdidata, aes(x=pm2.5_gdpcap, y=lifexpec))+
@@ -126,7 +131,9 @@ ggplot(wdidata, aes(x=pm2.5_gdpcap, y=lifexpec))+
          geom_smooth(se=FALSE)+
          geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
          theme_bw()
+```
 
+```{r fig.cap="Figure 7", echo=FALSE}
 wdidata$co2_gdpcap <- scale(scale(wdidata$co2emmission)+scale(wdidata$gdpcap))
 
 ggplot(wdidata, aes(x=co2_gdpcap, y=lifexpec))+
@@ -134,7 +141,9 @@ ggplot(wdidata, aes(x=co2_gdpcap, y=lifexpec))+
          geom_smooth(se=FALSE)+
          geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
          theme_bw()
+```
 
+```{r fig.cap="Figure 8", echo=FALSE}
 wdidata$pm_co2_gdp <- scale(scale(wdidata$pm2.5)+scale(wdidata$co2emmission)+scale(wdidata$gdpcap))
 
 ggplot(wdidata, aes(x=pm_co2_gdp, y=lifexpec))+
@@ -154,7 +163,7 @@ model2 <- lm_mi(log(lifexpec)~log(co2emmission)+log(gdpcap)+counname+as.factor(t
 model3 <- lm_mi(log(lifexpec)~log(co2emmission)+log(pm2.5)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
 model4 <- lm_mi(log(lifexpec)~log(co2emmission)+log(gdpcapgro)+log(pm2.5)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
 model5 <- lm_mi(log(lifexpec)~log(co2emmission)+log(urbanpop)+log(gdpcapgro)+log(pm2.5)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
-htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
+texreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
 
 ```
 
@@ -166,7 +175,7 @@ model2 <- lm_mi(lifexpec~co2emmission+I(gdpcap/1000)+counname+as.factor(time), w
 model3 <- lm_mi(lifexpec~co2emmission+pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
 model4 <- lm_mi(lifexpec~co2emmission+gdpcapgro+pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
 model5 <- lm_mi(lifexpec~co2emmission+urbanpop+gdpcapgro+pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
-htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
+texreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
 ```
 
 Because PM2.5 seems to negatively assocaited with life expectancy, I ran five models with PM2.5 as the first variable for analysis. See Table 3. 
@@ -178,7 +187,7 @@ model2 <- lm_mi(lifexpec~pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.
 model3 <- lm_mi(lifexpec~pm2.5+co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
 model4 <- lm_mi(lifexpec~pm2.5+gdpcapgro+co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
 model5 <- lm_mi(lifexpec~pm2.5+urbanpop+gdpcapgro+co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
-htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
+texreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
 ```
 
 The influence of PM2.5 on life expectancy drops from .0672 to .0521 and remains little change after adding other variables. CO2 emission remains postively associated with life expectancy. According to model 3 in table 3, holding PM2.5 and GDP per capita constant, on average, every metric tons CO2 emission per capita is associated with .0131 year increase of life expectancy. The only time when CO2 emission is negatively associated with life expectancy is to hold GDP per capita constant. See table 2. Holding GDP per capita constant, on average, every metric tons CO2 emission per capita is associated with .0248 years decrease of life expectancy. On the other hand, in table 3, holding GDP per capita constant, one average, every microgram per cubic meter PM2.5 increase is associated with .521 year decrease of life expectancy. 

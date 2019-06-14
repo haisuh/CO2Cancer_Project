@@ -17,11 +17,7 @@ title: "How Life Expectancy is Impacted by Air Quality"
 author:
 - affiliation: University of Oregon, Sociology
   name: Haisu Huang
-- affiliation: Some Research University
-  name: My co-author
-keywords: keywords
-thanks: Professor Aaron Gullickson and everyone in statistics 1 and 2
-abstract: This is a test abstract
+
 
 ---
 
@@ -39,14 +35,12 @@ library(ggplot2)
 ```
 # Introduction
 
-Previous studies have examined the relationship between exposure to air pollution and its impact on health. A few studies on population scale influenced by air pollution have focused on consequences such as lower birth weight and higher death rate. But little research explores the direct association between air pollution and human suffering. I intended to use cancer data to indicate human suffering, however, due to lack of resources and limitation on time searching for such resources, I replaced the measurement of human suffering with life expectancy. This paper is to demonstrate how I conduct the statistical analysis of the relationship beween air quality and life expetancy. 
+Previous studies have examined the relationship between exposure to air pollution and its impact on health. A few studies on population scale influenced by air pollution have focused on consequences such as lower birth weight and higher death rate. But little research explores the direct association between air pollution and human suffering. I intended to use cancer data to indicate human suffering, however, due to lack of resources and limitation on time searching for such resources, I replaced the measurement of human suffering with life expectancy. This paper is to demonstrate how I conduct the statistical analysis of the relationship beween air quality and life expectancy. 
 
 
 # Data and Methods
 
-The data for this project is from the world development indicators, from the following link: https://databank.worldbank.org/data/source/world-development-indicators?savedlg=1&l=en#
-
-The dataset includes the following 12 variables with brief descriptions:
+The data for this project is from the world development indicators. The dataset includes the following 12 variables with brief descriptions:
 1. country name: all countries are selected
 2. country code
 3. time: year from 2008 to 2018
@@ -60,20 +54,24 @@ The dataset includes the following 12 variables with brief descriptions:
 11. urban population: (% of total)
 12. mortality: from CVD, cancer, diabetes or CRD between exact ages 30 and 70 (%)
 
-After studying the dataset, I conducted data cleaning for several reasons. First, from row 218 to 267, the geographical locations are regions, not indivisual countries. These rows do not contribute to my study so they were deleted. Second, The years of 2008, 2009 and 2018 do not contain valuable data on particular matters 2.5 (PM2.5), which is a very imrportant variable for air quality, so these years were deleted. Third, the years after 2014 were deleted, as well, because they do not contain data on CO2 emission which is another important variable to indicate air quality. Due to missing values in several years, CO2 emission and PM2.5, this dataset can only interpret the relationship between life expectancy and air quality within a limited scope. 
+After studying the dataset, I processed data cleaning. First, from row 218 to 267, the geographical locations are regions, not individual countries. These rows do not contribute to my study so they were deleted. Second, the years of 2008, 2009 and 2018 do not contain valuable data on particular matters 2.5 (PM2.5). Since PM2.5 is a very important variable for air quality, these years were deleted for the convenience of analysis. Third, the years after 2014 also were deleted because they do not contain data on CO2 emission which is another important variable to indicate air quality. Due to missing values in several year variables, CO2 emission and PM2.5, this dataset can only interpret the relationship between life expectancy and air quality within a limited scope. 
 
 After the dataset is cleaned, I conducted 5 imputations and adjusted weight and cluster in order to address the design effect in the dataset. I used logistics regression models to analyze the relationships between each independant variable and life expectancy. 
-
+```{r imputation}
+#drop after 2014, because all CO2 data missing
+wdidata <- as.data.frame(subset(wdidata, time<2015 & counname!="St. Martin (French part)",
+                  select=c("counname","time","lifexpec","pm2.5","co2emmission","gdpcap",
+                           "gdpcapgro","urbanpop")))
+wdidata.impute <- amelia(wdidata, m=5, ts="time", cs="counname")
+```
 
 
 # Results
 
-In the process of analysis, I exmained the relationship of each variable with life expectancy. Both CO2 emission and GDP per capita seem to have similar positive effects on life expectancy, while PM2.5 shows some negative association with life expectancy. 
-
-<a href="#top">Back to top</a>
+In the process of analysis, I examined the relationship between each variable and life expectancy. I also synthesized a few variable combinations to see how life expectancy is impacted. Both CO2 emission and GDP per capita seem to have similar positive effects on life expectancy, while PM2.5 shows some negative association with life expectancy. 
 
 
-```{r fig.cap="Figure 1", echo=FALSE}
+```{r fig.cap="Relationship between CO2 Emission and Life Expectancy", echo=FALSE}
 
 ggplot(wdidata, aes(x=co2emmission, y=lifexpec))+
          geom_point()+
@@ -82,7 +80,7 @@ ggplot(wdidata, aes(x=co2emmission, y=lifexpec))+
          theme_bw()
 ```
 
-```{r fig.cap="Figure 2", echo=FALSE}
+```{r fig.cap="Relationship between GDP per capita and Life Expectancy", echo=FALSE}
 ggplot(wdidata, aes(x=gdpcap, y=lifexpec))+
          geom_point()+
          geom_smooth(se=FALSE)+
@@ -90,7 +88,7 @@ ggplot(wdidata, aes(x=gdpcap, y=lifexpec))+
          theme_bw()
 ```
 
-```{r fig.cap="Figure 3", echo=FALSE}
+```{r fig.cap="Relationship between PM2.5 and Life Expectancy", echo=FALSE}
 ggplot(wdidata, aes(x=pm2.5, y=lifexpec))+
          geom_point()+
          geom_smooth(se=FALSE)+
@@ -99,10 +97,10 @@ ggplot(wdidata, aes(x=pm2.5, y=lifexpec))+
 ```
 
          
-Since both CO2 emission and PM2.5 indicates the quality of air, I sythesized these two variable and examined the relationship between this sythetic scale with life expectancy. 
+Since both CO2 emission and PM2.5 indicate the quality of air, I sythesized these two variable and examined the relationship between this sythetic scale with life expectancy. 
 
 
-```{r fig.cap="Figure 4", echo=FALSE}
+```{r fig.cap="Relationship between GDP per Capita and CO2 Emission", echo=FALSE}
 ggplot(wdidata, aes(x=gdpcap, y=co2emmission))+
   geom_point()+
   geom_smooth(se=FALSE)+
@@ -110,7 +108,7 @@ ggplot(wdidata, aes(x=gdpcap, y=co2emmission))+
   theme_bw()
 ```
 
-```{r fig.cap="Figure 5", echo=FALSE}
+```{r fig.cap="Synthetic PM2.5 & CO2 Emission and Life Expectancy", echo=FALSE}
 wdidata$bad_air <- scale(scale(wdidata$pm2.5)+scale(wdidata$co2emmission))
 
 ggplot(wdidata, aes(x=bad_air, y=lifexpec))+
@@ -120,10 +118,10 @@ ggplot(wdidata, aes(x=bad_air, y=lifexpec))+
          theme_bw()
 ```
 
-I also respectively synthetized (1) PM2.5 and GDP per capita (2) CO2 emission and GDP per capita (3) PM2.5, CO2 emission and GDP per capita. All three charts indicate similar trends of life expectancy with changes of the independant variables. One thing notable is the outlier with large independant variable index and also high life expetancy. The country is Qatar, a wealthy middle eastern country. According to the data of Qatar, air quality does not cause life expenctany noticeably low, rather people in this country tends to live longer, despite of the poor air quality. This seems to contradicts with common sense that poor air quality should lower life expectancy, however, tt is suspected that GDP per capita may play a part in this contradictive phenomenon.
+I also respectively synthetized (1) PM2.5 and GDP per capita (2) CO2 emission and GDP per capita (3) PM2.5, CO2 emission and GDP per capita. All three charts indicate similar trends of life expectancy with changes of the independant variables. One thing notable is the outlier with high PM2.5 concentration and also high life expectancy. The country is Qatar, a wealthy middle eastern country. According to the data of Qatar, air quality does not cause life expenctany noticeably low. On the contrary, people in this country tend to live longer, despite of the poor air quality. This seems to contradicts with the common sense that poor air quality should lower life expectancy, however, it is suspected that GDP per capita may play a part in this contradictive phenomenon.
 
 
-```{r fig.cap="Figure 6", echo=FALSE}
+```{r fig.cap="Relationship between Synthetic PM2.5 & GDP per capita and Life Expectancy", echo=FALSE}
 wdidata$pm2.5_gdpcap <- scale(scale(wdidata$pm2.5)+scale(wdidata$gdpcap))
 
 ggplot(wdidata, aes(x=pm2.5_gdpcap, y=lifexpec))+
@@ -133,7 +131,7 @@ ggplot(wdidata, aes(x=pm2.5_gdpcap, y=lifexpec))+
          theme_bw()
 ```
 
-```{r fig.cap="Figure 7", echo=FALSE}
+```{r fig.cap="Relationship between Synthetic CO2 Emission & GDP per capita and Life Expectancy", echo=FALSE}
 wdidata$co2_gdpcap <- scale(scale(wdidata$co2emmission)+scale(wdidata$gdpcap))
 
 ggplot(wdidata, aes(x=co2_gdpcap, y=lifexpec))+
@@ -143,7 +141,7 @@ ggplot(wdidata, aes(x=co2_gdpcap, y=lifexpec))+
          theme_bw()
 ```
 
-```{r fig.cap="Figure 8", echo=FALSE}
+```{r fig.cap="Relationship between Synthetic PM2.5, CO2 Emission & GDP per capita and Life Expectancy", echo=FALSE}
 wdidata$pm_co2_gdp <- scale(scale(wdidata$pm2.5)+scale(wdidata$co2emmission)+scale(wdidata$gdpcap))
 
 ggplot(wdidata, aes(x=pm_co2_gdp, y=lifexpec))+
@@ -154,9 +152,62 @@ ggplot(wdidata, aes(x=pm_co2_gdp, y=lifexpec))+
 ```
 
 
-After the preliminary examination of how each indepedant variable and each synthetic scale influnce life expetancy, I ran five models using log ratio and without log ratio. Bewteen models with log ratio (table 1) and without log ratio (table 2), I kept the one without log ratio as it seems more intuitive for interpretation. Take table 2 as an example, holding both CO2 emission and GDP per capita constant, on average, every microgram per cubic meter increase of PM2.5 per year is associated with .052 year decrease of life expectancy at birth. 
+After the preliminary examination of how each indepedant variable and each synthetic scale influence life expetancy, I ran five models using log ratios and without log ratios. Bewteen models with log ratio and without log ratio, I kept the one without log ratio as it seems more intuitive for interpretation. For example, holding both CO2 emission and GDP per capita constant, on average, every microgram per cubic meter increase of PM2.5 per year is associated with .052 year decrease of life expectancy at birth. 
 
-Table 1 
+```{r functions, echo=FALSE}
+
+lm_mi <- function(formula, imp) {
+  b <- se <- R2 <- NULL
+  
+  for(i in 1:imp$m) {
+    #run the model
+    model <- lm(formula, data=imp$imputations[[i]])
+    #collect the results
+    b <- cbind(b, coef(model))
+    se <- cbind(se, summary(model)$coef[,2])
+    R2 <- c(R2,summary(model)$r.squared)
+  }
+  
+  #pool the results
+  b.pool <- apply(b, 1, mean)
+  between.var <- apply(b, 1, var)
+  within.var <- apply(se^2, 1, mean)
+  se.pool <- sqrt(within.var+between.var+between.var/imp$m) 
+  t.pool <- b.pool/se.pool 
+  pvalue.pool <- (1-pnorm(abs(t.pool)))*2 
+  coefficients <- data.frame(b.pool, se.pool, t.pool, pvalue.pool)
+  
+  #the mean R2 value
+  r.squared <- mean(R2)
+  #we can also grap n and p from the last model since 
+  #they should be the same across all iterations
+  n <- nobs(model)
+  p <- length(model$coefficients)-1
+  #go ahead and calculate BIC.null
+  bic.null <- n*log(1-r.squared)+p*log(n)
+  
+  #return everything in a list
+  return(list(coef=coefficients,
+              n=n,
+              r.squared=r.squared,
+              bic.null=bic.null))
+}
+
+convertModel <- function(model) {
+  coef <- subset(model$coef, !grepl("counname", rownames(model$coef)))
+  tr <- createTexreg(
+    coef.names = rownames(coef), 
+    coef = coef$b.pool, 
+    se =coef$se.pool, 
+    pvalues = coef$pvalue.pool,
+    gof.names = c("R2","BIC (null)","N"), 
+    gof = c(model$r.squared, model$bic.null, model$n), 
+    gof.decimal = c(T,F,F)
+  )
+}
+```
+
+
 ```{r models, results='asis'}
 model1 <- lm_mi(log(lifexpec)~log(co2emmission)+counname, wdidata.impute)
 model2 <- lm_mi(log(lifexpec)~log(co2emmission)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
@@ -167,7 +218,6 @@ texreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digit
 
 ```
 
-Table 2
 
 ```{r models-n-log, results='asis'}
 model1 <- lm_mi(lifexpec~co2emmission+counname, wdidata.impute)
@@ -178,9 +228,7 @@ model5 <- lm_mi(lifexpec~co2emmission+urbanpop+gdpcapgro+pm2.5+I(gdpcap/1000)+co
 texreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
 ```
 
-Because PM2.5 seems to negatively assocaited with life expectancy, I ran five models with PM2.5 as the first variable for analysis. See Table 3. 
 
-Table 3
 ```{r models-n-log-switch, results='asis'}
 model1 <- lm_mi(lifexpec~pm2.5+counname, wdidata.impute)
 model2 <- lm_mi(lifexpec~pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
@@ -190,14 +238,14 @@ model5 <- lm_mi(lifexpec~pm2.5+urbanpop+gdpcapgro+co2emmission+I(gdpcap/1000)+co
 texreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
 ```
 
-The influence of PM2.5 on life expectancy drops from .0672 to .0521 and remains little change after adding other variables. CO2 emission remains postively associated with life expectancy. According to model 3 in table 3, holding PM2.5 and GDP per capita constant, on average, every metric tons CO2 emission per capita is associated with .0131 year increase of life expectancy. The only time when CO2 emission is negatively associated with life expectancy is to hold GDP per capita constant. See table 2. Holding GDP per capita constant, on average, every metric tons CO2 emission per capita is associated with .0248 years decrease of life expectancy. On the other hand, in table 3, holding GDP per capita constant, one average, every microgram per cubic meter PM2.5 increase is associated with .521 year decrease of life expectancy. 
+Because PM2.5 seems to negatively associated with life expectancy, I ran five models with PM2.5 as the first variable for analysis. The influence of PM2.5 on life expectancy drops from .0672 to .0521 and remains little change after adding other variables. CO2 emission remains postively associated with life expectancy. According to model 3 in table 3, holding PM2.5 and GDP per capita constant, on average, every metric tons CO2 emission increase per capita is associated with .0131 year increase of life expectancy. The only time when CO2 emission is negatively associated with life expectancy is to hold GDP per capita constant. Holding GDP per capita constant, on average, every metric tons CO2 emission increase per capita is associated with .0248 years decrease of life expectancy. On the other hand, holding GDP per capita constant, on average, every microgram per cubic meter PM2.5 increase is associated with .521 year decrease of life expectancy. 
 
 
-In both table 2 and 3, GDP per capita growth and urban population impacts life expectancy differently. Holding PM2.5, GDP per capitca and CO2 emission constant, on average, every one percent increase of GDP per capita growth per year is associated with .0094 decrease of life expectancy. Holding all other variables constant, on average, every one percent increase of urban population is associated with .0359 years increase of life expectancy. 
+In both table 2 and 3, GDP per capita growth and urban population impact life expectancy differently. Holding PM2.5, GDP per capitca and CO2 emission constant, on average, every one percent increase of GDP per capita growth per year is associated with .0094 decrease of life expectancy. Holding all other variables constant, on average, every one percent increase of urban population is associated with .0359 years increase of life expectancy. 
 
 # Conclusions
 
-This paper aims to find out how air quality impacts life expectancy, while considering other confounding factors such as GDP per capita. According to above statistical results, both CO2 emission and PM2.5 impact life expectancy to different extents. When GDP per capita is held constant, both CO2 emission and PM2.5 have negative impact on life expectancy, the impact of PM2.5 being generally larger than CO2 emission. GDP per capita plays a part in expanding life expectancy despite of poor air quality. However, this research does not address how much suffering exists among these longevity populations. Because the data collected for analysis contain substanitial amount of missing values. For example, in this dataset, I was only able to analyse the years from 2010 to 2015. The air quality from 2016 to now may have changed signifianctly due to rapid global warming. However, this project is important to offer a glimpse of the relationship between air quality and life expectancy for future reearchers. 
+This paper aims to find out how air quality impacts life expectancy, while taking other confounding factors such as GDP per capita into considerations. According to above statistical results, both CO2 emission and PM2.5 impact life expectancy to different extents. When GDP per capita is held constant, both CO2 emission and PM2.5 have negative impact on life expectancy, the impact of PM2.5 being generally larger than CO2 emission. It is indicated that GDP per capita plays a part in expanding life expectancy despite of poor air quality. However, since this research does not address how much suffering there is among populations, it is unknown whether the people who live long actually enjoy their life or not. This project has its limitations. The data collected for analysis contain a substanitial amount of missing values. For example, in this dataset, I was only able to analyze the years from 2010 to 2015. The air quality from 2016 to now may have changed signifianctly due to rapid global warming. However, after running different tests and models, this project offers a glimpse of the relationship between air quality and life expectancy. 
 
 # References
 Matthew Gentzkow and Jesse Shapiro, “Code and Data for the Social Sciences: A Practitioner’s Guide”

@@ -1,5 +1,5 @@
 ---
-title: "Analysis for Project"
+title: "How Life Expectancy is Impacted by Air Quality"
 output: 
   html_document: 
     fig_height: 6
@@ -9,11 +9,176 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message= FALSE)
 source("useful_functions.R")
+load("output/analytical_data.RData")
+library(mice)
+library(sandwich)
+library(lmtest)
+library(survey)
+library(texreg)
+library(pander)
+library(Amelia)
+```
+
+```{r imputation}
+#drop after 2014, because all CO2 data missing
+wdidata <- as.data.frame(subset(wdidata, time<2015 & counname!="St. Martin (French part)",
+                  select=c("counname","time","lifexpec","pm2.5","co2emmission","gdpcap",
+                           "gdpcapgro","urbanpop")))
+wdidata.impute <- amelia(wdidata, m=5, ts="time", cs="counname")
+```
+
+```{r functions, echo=FALSE}
+
+lm_mi <- function(formula, imp) {
+  b <- se <- R2 <- NULL
+  
+  for(i in 1:imp$m) {
+    #run the model
+    model <- lm(formula, data=imp$imputations[[i]])
+    #collect the results
+    b <- cbind(b, coef(model))
+    se <- cbind(se, summary(model)$coef[,2])
+    R2 <- c(R2,summary(model)$r.squared)
+  }
+  
+  #pool the results
+  b.pool <- apply(b, 1, mean)
+  between.var <- apply(b, 1, var)
+  within.var <- apply(se^2, 1, mean)
+  se.pool <- sqrt(within.var+between.var+between.var/imp$m) 
+  t.pool <- b.pool/se.pool 
+  pvalue.pool <- (1-pnorm(abs(t.pool)))*2 
+  coefficients <- data.frame(b.pool, se.pool, t.pool, pvalue.pool)
+  
+  #the mean R2 value
+  r.squared <- mean(R2)
+  #we can also grap n and p from the last model since 
+  #they should be the same across all iterations
+  n <- nobs(model)
+  p <- length(model$coefficients)-1
+  #go ahead and calculate BIC.null
+  bic.null <- n*log(1-r.squared)+p*log(n)
+  
+  #return everything in a list
+  return(list(coef=coefficients,
+              n=n,
+              r.squared=r.squared,
+              bic.null=bic.null))
+}
+
+convertModel <- function(model) {
+  coef <- subset(model$coef, !grepl("counname", rownames(model$coef)))
+  tr <- createTexreg(
+    coef.names = rownames(coef), 
+    coef = coef$b.pool, 
+    se =coef$se.pool, 
+    pvalues = coef$pvalue.pool,
+    gof.names = c("R2","BIC (null)","N"), 
+    gof = c(model$r.squared, model$bic.null, model$n), 
+    gof.decimal = c(T,F,F)
+  )
+}
 ```
 
 # Introduction
 <a href="#top">Back to top</a>
+
+```{r figure echo=FALSE}
+ggplot(wdidata, aes(x=co2emmission, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+ggplot(wdidata, aes(x=pm2.5, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+ggplot(wdidata, aes(x=gdpcap, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+ggplot(wdidata, aes(x=gdpcapgro, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+ggplot(wdidata, aes(x=urbanpop, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+#synthetic scale
+ggplot(wdidata, aes(x=gdpcap, y=co2emmission))+
+  geom_point()+
+  geom_smooth(se=FALSE)+
+  geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+  theme_bw()
+
+wdidata$bad_air <- scale(scale(wdidata$pm2.5)+scale(wdidata$co2emmission))
+
+ggplot(wdidata, aes(x=bad_air, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+
+wdidata$pm2.5_gdpcap <- scale(scale(wdidata$pm2.5)+scale(wdidata$gdpcap))
+
+ggplot(wdidata, aes(x=pm2.5_gdpcap, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+wdidata$co2_gdpcap <- scale(scale(wdidata$co2emmission)+scale(wdidata$gdpcap))
+
+ggplot(wdidata, aes(x=co2_gdpcap, y=lifexpec))+
+         geom_point()+
+         geom_smooth(se=FALSE)+
+         geom_smooth(method="lm", aes(group=counname), color="red", se=FALSE)+
+         theme_bw()
+
+```
+
+```{r models results='asis'}
+model1 <- lm_mi(log(lifexpec)~log(co2emmission)+counname, wdidata.impute)
+model2 <- lm_mi(log(lifexpec)~log(co2emmission)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
+model3 <- lm_mi(log(lifexpec)~log(co2emmission)+log(pm2.5)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
+model4 <- lm_mi(log(lifexpec)~log(co2emmission)+log(gdpcapgro)+log(pm2.5)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
+model5 <- lm_mi(log(lifexpec)~log(co2emmission)+log(urbanpop)+log(gdpcapgro)+log(pm2.5)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
+htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
+
+```
+
+```{r models-n-log results='asis'}
+model1 <- lm_mi(lifexpec~co2emmission+counname, wdidata.impute)
+model2 <- lm_mi(lifexpec~co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+model3 <- lm_mi(lifexpec~co2emmission+pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+model4 <- lm_mi(lifexpec~co2emmission+gdpcapgro+pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+model5 <- lm_mi(lifexpec~co2emmission+urbanpop+gdpcapgro+pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
+```
+
+
+```{r models-n-log change variable positions results='asis'}
+model1 <- lm_mi(lifexpec~pm2.5+counname, wdidata.impute)
+model2 <- lm_mi(lifexpec~pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+model3 <- lm_mi(lifexpec~pm2.5+co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+model4 <- lm_mi(lifexpec~pm2.5+gdpcapgro+co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+model5 <- lm_mi(lifexpec~pm2.5+urbanpop+gdpcapgro+co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
+htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digits=4)
+```
+
+
 
 Use this R Markdown to perform the main analysis for the project. I use this basically as a lab notebook. It contains the main analysis and a variety of sensitivity analysis. The code in this documents serves as a baseline for the eventual tables and figures that will go into the paper. At the same time it will serve as a record of all supplementary analyses performed. 

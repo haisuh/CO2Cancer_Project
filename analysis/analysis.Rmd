@@ -19,6 +19,7 @@ library(survey)
 library(texreg)
 library(pander)
 library(Amelia)
+library(ggplot2)
 ```
 
 ```{r imputation}
@@ -85,7 +86,7 @@ convertModel <- function(model) {
 # Introduction
 <a href="#top">Back to top</a>
 
-```{r figure echo=FALSE}
+```{r figure, echo=FALSE}
 ggplot(wdidata, aes(x=co2emmission, y=lifexpec))+
          geom_point()+
          geom_smooth(se=FALSE)+
@@ -150,7 +151,7 @@ ggplot(wdidata, aes(x=co2_gdpcap, y=lifexpec))+
 
 ```
 
-```{r models results='asis'}
+```{r models, results='asis'}
 model1 <- lm_mi(log(lifexpec)~log(co2emmission)+counname, wdidata.impute)
 model2 <- lm_mi(log(lifexpec)~log(co2emmission)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
 model3 <- lm_mi(log(lifexpec)~log(co2emmission)+log(pm2.5)+log(gdpcap)+counname+as.factor(time), wdidata.impute)
@@ -160,7 +161,7 @@ htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digi
 
 ```
 
-```{r models-n-log results='asis'}
+```{r models-n-log, results='asis'}
 model1 <- lm_mi(lifexpec~co2emmission+counname, wdidata.impute)
 model2 <- lm_mi(lifexpec~co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
 model3 <- lm_mi(lifexpec~co2emmission+pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
@@ -170,7 +171,7 @@ htmlreg(lapply(list(model1, model2, model3, model4, model5), convertModel), digi
 ```
 
 
-```{r models-n-log change variable positions results='asis'}
+```{r models-n-log-switch, results='asis'}
 model1 <- lm_mi(lifexpec~pm2.5+counname, wdidata.impute)
 model2 <- lm_mi(lifexpec~pm2.5+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
 model3 <- lm_mi(lifexpec~pm2.5+co2emmission+I(gdpcap/1000)+counname+as.factor(time), wdidata.impute)
